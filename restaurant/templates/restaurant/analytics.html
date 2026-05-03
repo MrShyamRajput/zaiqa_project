@@ -1,0 +1,229 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>Zaiqa Analytics</title>
+<link rel="icon" type="image/x-icon" href="{% static 'restaurant/favicon.svg' %}">
+<script src="https://cdn.tailwindcss.com"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<style>
+  body {
+    font-family: system-ui, sans-serif;
+    background: #f5f1ea;
+    color: #2b1b0f;
+  }
+
+  .card {
+    background: #ffffff;
+    border-radius: 18px;
+    padding: 18px;
+    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
+    transition: all 0.25s ease;
+    border: 1px solid #eee;
+  }
+
+  .card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
+  }
+
+  .gold-text {
+    color: #c8a96a;
+  }
+
+  .dark-btn {
+    background: #2b1b0f;
+    color: white;
+    transition: all 0.2s ease;
+  }
+
+  .dark-btn:hover {
+    background: #3a2414;
+    transform: scale(1.05);
+  }
+
+  .ai-box {
+    max-height: 220px;
+    overflow-y: auto;
+    line-height: 1.6;
+  }
+</style>
+</head>
+
+<body class="p-4 md:p-6">
+
+<!-- HEADER -->
+<div class="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
+
+  <h1 class="text-3xl font-bold gold-text">
+    📊 Zaiqa Analytics
+  </h1>
+
+  <div class="flex gap-2">
+    <select id="filter" class="p-2 border rounded-lg bg-white">
+      <option value="daily">Daily</option>
+      <option value="weekly">Weekly</option>
+      <option value="monthly">Monthly</option>
+    </select>
+
+    <button onclick="loadAnalytics()" class="dark-btn px-4 py-2 rounded-lg">
+      Apply
+    </button>
+  </div>
+</div>
+
+<!-- KPI -->
+<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
+
+  <div class="card">
+    <p class="text-gray-500 text-sm">Revenue</p>
+    <h2 id="totalRevenue" class="text-3xl font-bold mt-2 gold-text">₹0</h2>
+  </div>
+
+  <div class="card">
+    <p class="text-gray-500 text-sm">Orders</p>
+    <h2 id="totalOrders" class="text-3xl font-bold mt-2">0</h2>
+  </div>
+
+  <div class="card">
+    <p class="text-gray-500 text-sm">Avg Order</p>
+    <h2 id="avgOrder" class="text-3xl font-bold mt-2">₹0</h2>
+  </div>
+
+</div>
+
+<!-- CHART -->
+<div class="card mb-8">
+  <h2 class="text-lg font-semibold mb-4 gold-text">Sales Trend</h2>
+
+  <!-- FIXED HEIGHT CONTAINER -->
+  <div class="h-[280px] md:h-[320px] lg:h-[350px] w-full">
+    <canvas id="salesChart"></canvas>
+  </div>
+</div>
+
+<!-- GRID -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+
+  <!-- TOP ITEMS -->
+  <div class="card">
+    <h2 class="text-lg font-semibold mb-4 gold-text">🔥 Top Items</h2>
+    <ul id="topItems" class="space-y-3 text-sm"></ul>
+  </div>
+
+  <!-- AI -->
+  <div class="card">
+    <h2 class="text-lg font-semibold mb-4 gold-text">🤖 AI Suggestions</h2>
+
+    <div id="aiBox" class="ai-box text-gray-700 text-sm bg-[#faf7f2] p-3 rounded-lg border border-[#eee]">
+      Loading insights...
+    </div>
+  </div>
+
+</div>
+
+<script>
+
+let chart;
+
+// CLEAN AI TEXT
+function cleanAI(text) {
+  return text
+    .replace(/[*#-]/g, "")
+    .replace(/\n+/g, "\n")
+    .trim();
+}
+
+// LOAD ANALYTICS
+async function loadAnalytics() {
+  const filter = document.getElementById("filter").value;
+
+  try {
+    const res = await fetch(`/analytics?filter=${filter}`);
+    const data = await res.json();
+
+    const labels = data.sales.map(x =>
+      new Date(x.period).toLocaleDateString()
+    );
+
+    const sales = data.sales.map(x => x.total_sales);
+    const orders = data.sales.map(x => x.order_count);
+
+    const totalRevenue = sales.reduce((a,b)=>a+b,0);
+    const totalOrders = orders.reduce((a,b)=>a+b,0);
+    const avgOrder = totalOrders ? (totalRevenue/totalOrders).toFixed(2) : 0;
+
+    document.getElementById("totalRevenue").innerText = "₹" + totalRevenue;
+    document.getElementById("totalOrders").innerText = totalOrders;
+    document.getElementById("avgOrder").innerText = "₹" + avgOrder;
+
+    if (chart) chart.destroy();
+
+    chart = new Chart(document.getElementById("salesChart"), {
+      type: "bar",
+      data: {
+        labels,
+        datasets: [{
+          label: "Revenue",
+          data: sales,
+          borderWidth: 2
+        }]
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false, // ⭐ FIX
+
+        plugins: {
+          legend: { display: false }
+        },
+        scales: {
+          x: { grid: { display: false } },
+          y: { grid: { color: "#eee" } }
+        }
+      }
+    });
+
+    // TOP ITEMS
+    const list = document.getElementById("topItems");
+    list.innerHTML = "";
+
+    data.top_items.forEach(item => {
+      list.innerHTML += `
+        <li class="flex justify-between items-center border-b pb-2 hover:bg-gray-50 px-2 rounded">
+          <span>${item[0]}</span>
+          <span class="font-semibold gold-text">${item[1]}</span>
+        </li>`;
+    });
+
+  } catch (err) {
+    console.error(err);
+  }
+}
+
+// AI
+async function loadAI() {
+  const box = document.getElementById("aiBox");
+
+  try {
+    const res = await fetch("/ai-suggestions");
+    const data = await res.json();
+
+    const clean = cleanAI(data.suggestions || "No insights");
+
+    box.innerHTML = clean.replace(/\n/g, "<br>");
+
+  } catch {
+    box.innerText = "Failed to load insights";
+  }
+}
+
+// INIT
+loadAnalytics();
+loadAI();
+
+</script>
+
+</body>
+</html>

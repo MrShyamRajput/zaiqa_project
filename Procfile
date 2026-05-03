@@ -1,0 +1,1 @@
+web: gunicorn zaiqa_django.wsgi:application
