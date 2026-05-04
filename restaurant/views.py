@@ -49,14 +49,15 @@ def generate_qr(request):
     token = generate_token(table_no)
     url = f"{base_url}?token={token}"
 
-    img = qrcode.make(url)
-    qr_dir = os.path.join(settings.MEDIA_ROOT, 'qr_codes')
-    os.makedirs(qr_dir, exist_ok=True)
-    img_path = os.path.join(qr_dir, f'table_{table_no}.png')
-    img.save(img_path)
+    # QR via API (no Pillow needed)
+    qr_url = f"https://api.qrserver.com/v1/create-qr-code/?size=200x200&data={url}"
 
-    qr_url = request.build_absolute_uri(f'/media/qr_codes/table_{table_no}.png')
-    return JsonResponse({'token': token, 'url': url, 'qr_image': qr_url, 'table': table_no})
+    return JsonResponse({
+        'token': token,
+        'url': url,
+        'qr_image': qr_url,
+        'table': table_no
+    })
 
 
 # ─── Decode Token ─────────────────────────────────────────────
