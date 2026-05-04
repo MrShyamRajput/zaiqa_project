@@ -4,7 +4,7 @@ from .models import Order, AISuggestion
 
 def generate_ai_suggestions():
     try:
-        genai.configure(api_key=os.getenv("GEMINI_API_KEY"))
+        genai.configure(api_key="AIzaSyCvbbHuFcaHaL3RZmlkhuP0T-fsaGDgmUQ")
         model = genai.GenerativeModel("gemini-2.5-flash")
 
         # 🔥 limit data (important for quota)

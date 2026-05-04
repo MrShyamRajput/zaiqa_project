@@ -2,228 +2,518 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="UTF-8" />
-<title>Zaiqa Analytics</title>
-<link rel="icon" type="image/x-icon" href="{% static 'restaurant/favicon.svg' %}">
-<script src="https://cdn.tailwindcss.com"></script>
-<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Zaiqa · Analytics</title>
+  <link rel="icon" type="image/x-icon" href="{% static 'restaurant/favicon.svg' %}">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
 
-<style>
-  body {
-    font-family: system-ui, sans-serif;
-    background: #f5f1ea;
-    color: #2b1b0f;
-  }
+  <style>
+    :root {
+      --gold:        #C9993A;
+      --gold-light:  #E8C46A;
+      --gold-pale:   #FAF3E0;
+      --gold-dim:    rgba(201,153,58,0.12);
+      --cream:       #F7F3EC;
+      --dark:        #1C140A;
+      --dark2:       #261C0F;
+      --muted:       #7A6A50;
+      --border:      #EAE2D4;
+      --white:       #FFFFFF;
+      --green:       #2D6A3F;
+      --red:         #9B2335;
+    }
 
-  .card {
-    background: #ffffff;
-    border-radius: 18px;
-    padding: 18px;
-    box-shadow: 0 8px 25px rgba(0,0,0,0.06);
-    transition: all 0.25s ease;
-    border: 1px solid #eee;
-  }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    body { font-family: 'DM Sans', sans-serif; background: var(--cream); color: var(--dark); min-height: 100vh; }
+    h1,h2,h3,h4,h5 { font-family: 'Cormorant Garamond', serif; }
 
-  .card:hover {
-    transform: translateY(-4px);
-    box-shadow: 0 12px 30px rgba(0,0,0,0.08);
-  }
+    /* ── Animations ── */
+    @keyframes fadeDown  { from{opacity:0;transform:translateY(-14px)} to{opacity:1;transform:translateY(0)} }
+    @keyframes fadeUp    { from{opacity:0;transform:translateY(22px)}  to{opacity:1;transform:translateY(0)} }
+    @keyframes scaleIn   { from{opacity:0;transform:scale(.93)}        to{opacity:1;transform:scale(1)} }
+    @keyframes shimmer   { 0%{background-position:-600px 0} 100%{background-position:600px 0} }
+    @keyframes countUp   { from{opacity:0;transform:translateY(8px)}   to{opacity:1;transform:translateY(0)} }
+    @keyframes pulse     { 0%,100%{opacity:1} 50%{opacity:.4} }
+    @keyframes spin      { to{transform:rotate(360deg)} }
+    @keyframes barGrow   { from{transform:scaleY(0)} to{transform:scaleY(1)} }
+    @keyframes glow      { 0%,100%{box-shadow:0 0 0 0 rgba(201,153,58,.3)} 50%{box-shadow:0 0 18px 4px rgba(201,153,58,.15)} }
 
-  .gold-text {
-    color: #c8a96a;
-  }
+    .anim-down { animation: fadeDown .5s ease both; }
+    .anim-up   { animation: fadeUp  .5s ease both; }
+    .anim-scale{ animation: scaleIn .45s cubic-bezier(.22,1,.36,1) both; }
+    .d1{animation-delay:.05s} .d2{animation-delay:.12s} .d3{animation-delay:.19s}
+    .d4{animation-delay:.26s} .d5{animation-delay:.33s} .d6{animation-delay:.4s}
 
-  .dark-btn {
-    background: #2b1b0f;
-    color: white;
-    transition: all 0.2s ease;
-  }
+    /* ── Header ── */
+    header {
+      background: var(--dark);
+      position: sticky; top: 0; z-index: 100;
+    }
+    .shimmer-bar {
+      height: 2px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light), var(--gold));
+      background-size: 600px 2px;
+      animation: shimmer 2s infinite linear;
+    }
+    .header-inner {
+      max-width: 1180px; margin: 0 auto;
+      padding: 14px 20px;
+      display: flex; align-items: center; justify-content: space-between; gap: 12px;
+    }
+    .logo { font-size: 1.8rem; color: var(--gold-light); letter-spacing:.02em; }
+    .logo-sub { font-family:'DM Sans'; font-size:.62rem; letter-spacing:.22em; text-transform:uppercase; color:#6B5A40; margin-top:-4px; }
+    .header-center { font-family:'DM Sans'; font-size:.78rem; letter-spacing:.16em; text-transform:uppercase; color:#9A8060; }
+    .live-wrap { display:flex; align-items:center; gap:6px; }
+    .live-dot { width:7px; height:7px; border-radius:50%; background:#4ade80; animation:pulse 1.8s ease infinite; }
+    .live-text { font-size:.68rem; letter-spacing:.1em; text-transform:uppercase; color:#6B7280; }
 
-  .dark-btn:hover {
-    background: #3a2414;
-    transform: scale(1.05);
-  }
+    /* ── Nav (tab bar) ── */
+    nav.tab-bar { background: var(--white); border-bottom: 1px solid var(--border); position:sticky; top:57px; z-index:90; }
+    .tab-bar-inner { max-width:1180px; margin:0 auto; padding:0 20px; display:flex; gap:0; }
+    .tab-btn {
+      padding:13px 22px; font-family:'DM Sans'; font-size:.78rem; font-weight:600;
+      letter-spacing:.06em; text-transform:uppercase; color:var(--muted); background:none;
+      border:none; border-bottom:3px solid transparent; cursor:pointer;
+      transition:color .2s, border-color .2s; text-decoration:none; display:inline-flex; align-items:center;
+    }
+    .tab-btn:hover { color:var(--dark); }
+    .tab-btn.active { color:var(--gold); border-bottom-color:var(--gold); }
 
-  .ai-box {
-    max-height: 220px;
-    overflow-y: auto;
-    line-height: 1.6;
-  }
-</style>
+    /* ── Main layout ── */
+    .page { max-width: 1180px; margin: 0 auto; padding: 32px 20px 64px; }
+
+    /* ── Section heading ── */
+    .section-eyebrow { font-family:'DM Sans'; font-size:.65rem; letter-spacing:.2em; text-transform:uppercase; color:var(--gold); margin-bottom:4px; }
+    .section-title { font-size: 2rem; color:var(--dark); line-height:1.1; }
+
+    /* ── Filter row ── */
+    .filter-bar {
+      display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+    }
+    .filter-pill {
+      padding: 8px 20px; border-radius: 50px; font-family:'DM Sans';
+      font-size: .78rem; font-weight: 600; letter-spacing:.04em;
+      background: var(--white); border: 1.5px solid var(--border);
+      color: var(--muted); cursor: pointer;
+      transition: background .18s, border-color .18s, color .18s, transform .18s;
+    }
+    .filter-pill:hover, .filter-pill.active {
+      background: var(--dark); border-color: var(--dark); color: #fff;
+      transform: scale(1.04);
+    }
+
+    /* ── KPI Cards ── */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px; margin: 28px 0;
+    }
+    .kpi-card {
+      background: var(--white);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 22px 24px;
+      box-shadow: 0 4px 20px rgba(28,20,10,.05);
+      position: relative; overflow: hidden;
+      transition: transform .25s, box-shadow .25s;
+    }
+    .kpi-card::before {
+      content:''; position:absolute; top:0; left:0; right:0; height:3px;
+      background: linear-gradient(90deg, var(--gold), var(--gold-light));
+      opacity: 0; transition: opacity .25s;
+    }
+    .kpi-card:hover { transform: translateY(-5px); box-shadow: 0 14px 40px rgba(28,20,10,.1); }
+    .kpi-card:hover::before { opacity: 1; }
+    .kpi-card .bg-icon {
+      position: absolute; right: 18px; top: 50%; transform: translateY(-50%);
+      font-size: 3rem; opacity: .06; pointer-events: none; user-select:none;
+    }
+    .kpi-label { font-family:'DM Sans'; font-size:.68rem; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); }
+    .kpi-val { font-family:'Cormorant Garamond'; font-size:2.6rem; font-weight:700; color:var(--gold); line-height:1; margin-top:8px; animation: countUp .5s ease both; }
+    .kpi-sub { font-family:'DM Sans'; font-size:.72rem; color:var(--muted); margin-top:6px; }
+    .kpi-badge {
+      display:inline-flex; align-items:center; gap:3px;
+      padding:2px 8px; border-radius:99px; font-size:.65rem; font-weight:700;
+    }
+    .kpi-badge.up   { background:#dcfce7; color:var(--green); }
+    .kpi-badge.down { background:#fee2e2; color:var(--red); }
+
+    /* ── Chart Card ── */
+    .chart-card {
+      background: var(--white); border: 1px solid var(--border); border-radius: 20px;
+      padding: 24px 26px; box-shadow: 0 4px 20px rgba(28,20,10,.05);
+      margin-bottom: 20px; position: relative; overflow: hidden;
+    }
+    .chart-card::after {
+      content:''; position:absolute; bottom:0; left:0; right:0; height:2px;
+      background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+      opacity: .4;
+    }
+    .chart-header { display:flex; align-items:flex-start; justify-content:space-between; flex-wrap:wrap; gap:10px; margin-bottom:20px; }
+    .chart-title { font-size:1.4rem; color:var(--dark); }
+    .chart-legend {
+      display:flex; gap:14px; align-items:center;
+      font-family:'DM Sans'; font-size:.72rem; color:var(--muted); font-weight:500;
+    }
+    .legend-dot { width:8px; height:8px; border-radius:50%; display:inline-block; margin-right:4px; }
+
+    /* ── Bottom grid ── */
+    .bottom-grid {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 20px;
+    }
+    @media(max-width:768px) { .bottom-grid { grid-template-columns: 1fr; } }
+
+    .panel {
+      background: var(--white); border: 1px solid var(--border); border-radius: 20px;
+      padding: 22px 24px; box-shadow: 0 4px 20px rgba(28,20,10,.05);
+      position:relative; overflow:hidden;
+    }
+    .panel-title { font-size:1.3rem; color:var(--dark); margin-bottom:18px; display:flex; align-items:center; gap:8px; }
+    .panel-icon { font-size:1rem; }
+
+    /* ── Top items ── */
+    .top-item {
+      display:flex; align-items:center; gap:12px;
+      padding: 10px 0; border-bottom: 1px solid #f3ede3;
+      animation: fadeUp .35s ease both;
+    }
+    .top-item:last-child { border-bottom:none; }
+    .top-item-rank { font-family:'Cormorant Garamond'; font-size:1.4rem; font-weight:700; color:var(--border); min-width:28px; }
+    .top-item-rank.gold-rank { color:var(--gold); }
+    .top-item-name { flex:1; font-size:.85rem; font-weight:500; }
+    .top-item-bar-wrap { width:80px; height:5px; background:#f0e8d8; border-radius:99px; overflow:hidden; }
+    .top-item-bar { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--gold),var(--gold-light)); transform-origin:left; animation: barGrow .6s ease both; }
+    .top-item-count { font-family:'Cormorant Garamond'; font-size:1.05rem; font-weight:600; color:var(--gold); min-width:30px; text-align:right; }
+
+    /* ── AI Box ── */
+    .ai-response {
+      font-size:.84rem; line-height:1.75; color:#4a3a28;
+      background: var(--gold-pale); border-radius: 14px; padding:16px;
+      border: 1px solid #e8d9b8;
+      max-height:260px; overflow-y:auto;
+    }
+    .ai-response p { margin-bottom:.6em; }
+    .ai-response p:last-child { margin-bottom:0; }
+    .ai-loading {
+      display:flex; align-items:center; gap:10px;
+      color:var(--muted); font-size:.82rem;
+    }
+    .spinner { width:16px; height:16px; border:2px solid var(--border); border-top-color:var(--gold); border-radius:50%; animation:spin .7s linear infinite; flex-shrink:0; }
+
+    /* ── Scrollbar ── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:var(--cream); }
+    ::-webkit-scrollbar-thumb { background:#d4c9b4; border-radius:4px; }
+
+    /* ── Skeleton ── */
+    .skeleton {
+      background: linear-gradient(90deg, #f0e8d8 25%, #e8dcc8 50%, #f0e8d8 75%);
+      background-size: 600px 100%; animation: shimmer 1.4s infinite;
+      border-radius: 10px;
+    }
+
+    /* ── Divider ── */
+    .gold-divider { height:1px; background:linear-gradient(90deg,transparent,var(--gold-light),transparent); opacity:.4; margin:28px 0; }
+
+    /* ── Responsive tweaks ── */
+    @media(max-width:640px) {
+      .kpi-val { font-size:2rem; }
+      .section-title { font-size:1.6rem; }
+      .header-center { display:none; }
+    }
+  </style>
 </head>
+<body>
 
-<body class="p-4 md:p-6">
-
-<!-- HEADER -->
-<div class="flex flex-col md:flex-row justify-between md:items-center mb-8 gap-4">
-
-  <h1 class="text-3xl font-bold gold-text">
-    📊 Zaiqa Analytics
-  </h1>
-
-  <div class="flex gap-2">
-    <select id="filter" class="p-2 border rounded-lg bg-white">
-      <option value="daily">Daily</option>
-      <option value="weekly">Weekly</option>
-      <option value="monthly">Monthly</option>
-    </select>
-
-    <button onclick="loadAnalytics()" class="dark-btn px-4 py-2 rounded-lg">
-      Apply
-    </button>
+<!-- ══ HEADER ══ -->
+<header class="anim-down">
+  <div class="shimmer-bar"></div>
+  <div class="header-inner">
+    <div>
+      <div class="logo">Zaiqa</div>
+      <div class="logo-sub">Restaurant System</div>
+    </div>
+    <a class="header-center" href="/admin-panel">Admin Panel<a/>
+    <div class="live-wrap">
+      <span class="live-dot"></span>
+      <span class="live-text">Live</span>
+    </div>
   </div>
-</div>
+</header>
 
-<!-- KPI -->
-<div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-5 mb-8">
-
-  <div class="card">
-    <p class="text-gray-500 text-sm">Revenue</p>
-    <h2 id="totalRevenue" class="text-3xl font-bold mt-2 gold-text">₹0</h2>
+<!-- ══ NAV ══ -->
+<nav class="tab-bar anim-down d1">
+  <div class="tab-bar-inner">
+    <a href="/admin-panel/" class="tab-btn">🍽 Admin Panel</a>
+    <a href="#" class="tab-btn active">📊 Analytics</a>
   </div>
+</nav>
 
-  <div class="card">
-    <p class="text-gray-500 text-sm">Orders</p>
-    <h2 id="totalOrders" class="text-3xl font-bold mt-2">0</h2>
-  </div>
+<!-- ══ PAGE ══ -->
+<main class="page">
 
-  <div class="card">
-    <p class="text-gray-500 text-sm">Avg Order</p>
-    <h2 id="avgOrder" class="text-3xl font-bold mt-2">₹0</h2>
-  </div>
-
-</div>
-
-<!-- CHART -->
-<div class="card mb-8">
-  <h2 class="text-lg font-semibold mb-4 gold-text">Sales Trend</h2>
-
-  <!-- FIXED HEIGHT CONTAINER -->
-  <div class="h-[280px] md:h-[320px] lg:h-[350px] w-full">
-    <canvas id="salesChart"></canvas>
-  </div>
-</div>
-
-<!-- GRID -->
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-
-  <!-- TOP ITEMS -->
-  <div class="card">
-    <h2 class="text-lg font-semibold mb-4 gold-text">🔥 Top Items</h2>
-    <ul id="topItems" class="space-y-3 text-sm"></ul>
-  </div>
-
-  <!-- AI -->
-  <div class="card">
-    <h2 class="text-lg font-semibold mb-4 gold-text">🤖 AI Suggestions</h2>
-
-    <div id="aiBox" class="ai-box text-gray-700 text-sm bg-[#faf7f2] p-3 rounded-lg border border-[#eee]">
-      Loading insights...
+  <!-- Heading + Filters -->
+  <div class="flex flex-col sm:flex-row sm:items-end justify-between gap-4 mb-2 anim-up d1">
+    <div>
+      <p class="section-eyebrow">Performance Overview</p>
+      <h1 class="section-title">Analytics</h1>
+    </div>
+    <div class="filter-bar" id="filterBar">
+      <button class="filter-pill active" onclick="setFilter('daily',this)">Daily</button>
+      <button class="filter-pill" onclick="setFilter('weekly',this)">Weekly</button>
+      <button class="filter-pill" onclick="setFilter('monthly',this)">Monthly</button>
     </div>
   </div>
 
-</div>
+  <div class="gold-divider"></div>
+
+  <!-- KPI Grid -->
+  <div class="kpi-grid">
+    <div class="kpi-card anim-scale d1">
+      <div class="bg-icon">₹</div>
+      <div class="kpi-label">Total Revenue</div>
+      <div class="kpi-val" id="totalRevenue">—</div>
+      <div class="kpi-sub">All completed orders</div>
+    </div>
+    <div class="kpi-card anim-scale d2">
+      <div class="bg-icon">🧾</div>
+      <div class="kpi-label">Total Orders</div>
+      <div class="kpi-val" id="totalOrders">—</div>
+      <div class="kpi-sub">Across all tables</div>
+    </div>
+    <div class="kpi-card anim-scale d3">
+      <div class="bg-icon">⌀</div>
+      <div class="kpi-label">Avg Order Value</div>
+      <div class="kpi-val" id="avgOrder">—</div>
+      <div class="kpi-sub">Revenue ÷ Orders</div>
+    </div>
+    <div class="kpi-card anim-scale d4">
+      <div class="bg-icon">🏆</div>
+      <div class="kpi-label">Top Table</div>
+      <div class="kpi-val" id="topTable">—</div>
+      <div class="kpi-sub">Most orders placed</div>
+    </div>
+  </div>
+
+  <!-- Sales Trend Chart -->
+  <div class="chart-card anim-up d2">
+    <div class="chart-header">
+      <div>
+        <p class="section-eyebrow">Trend</p>
+        <h2 class="chart-title">Sales Performance</h2>
+      </div>
+      <div class="chart-legend">
+        <span><span class="legend-dot" style="background:var(--gold)"></span>Revenue</span>
+        <span><span class="legend-dot" style="background:#c0d0ff"></span>Orders</span>
+      </div>
+    </div>
+    <div style="height:300px; position:relative;">
+      <canvas id="salesChart"></canvas>
+    </div>
+  </div>
+
+  <!-- Bottom Grid -->
+  <div class="bottom-grid">
+
+    <!-- Top Items -->
+    <div class="panel anim-up d3">
+      <h2 class="panel-title"><span class="panel-icon">🔥</span> Top Selling Items</h2>
+      <ul id="topItems">
+        <li class="ai-loading"><div class="spinner"></div> Loading items…</li>
+      </ul>
+    </div>
+
+    <!-- AI Suggestions -->
+    <div class="panel anim-up d4">
+      <h2 class="panel-title"><span class="panel-icon">🤖</span> AI Insights</h2>
+      <div id="aiBox" class="ai-response">
+        <div class="ai-loading"><div class="spinner"></div> Generating insights…</div>
+      </div>
+    </div>
+
+  </div>
+
+</main>
 
 <script>
+  let chart;
+  let currentFilter = 'daily';
 
-let chart;
+  /* ─── Filter pills ─── */
+  function setFilter(val, btn) {
+    currentFilter = val;
+    document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+    btn.classList.add('active');
+    loadAnalytics();
+  }
 
-// CLEAN AI TEXT
-function cleanAI(text) {
-  return text
-    .replace(/[*#-]/g, "")
-    .replace(/\n+/g, "\n")
-    .trim();
-}
+  /* ─── Format numbers ─── */
+  function fmt(n) { return Number(n).toLocaleString('en-IN'); }
 
-// LOAD ANALYTICS
-async function loadAnalytics() {
-  const filter = document.getElementById("filter").value;
+  /* ─── Skeleton KPI ─── */
+  function setKPI(id, val) {
+    const el = document.getElementById(id);
+    el.style.animation = 'none';
+    el.offsetHeight; // reflow
+    el.style.animation = 'countUp .5s ease both';
+    el.textContent = val;
+  }
 
-  try {
-    const res = await fetch(`/analytics?filter=${filter}`);
-    const data = await res.json();
+  /* ─── Load Analytics ─── */
+  async function loadAnalytics() {
+    // Show skeleton
+    ['totalRevenue','totalOrders','avgOrder','topTable'].forEach(id => {
+      document.getElementById(id).textContent = '…';
+    });
 
-    const labels = data.sales.map(x =>
-      new Date(x.period).toLocaleDateString()
-    );
+    try {
+      const res  = await fetch(`/analytics?filter=${currentFilter}`);
+      const data = await res.json();
 
-    const sales = data.sales.map(x => x.total_sales);
-    const orders = data.sales.map(x => x.order_count);
+      const sales  = data.sales || [];
+      const labels = sales.map(x => {
+        const d = new Date(x.period);
+        return d.toLocaleDateString('en-IN', {day:'numeric', month:'short'});
+      });
+      const revArr = sales.map(x => x.total_sales || 0);
+      const ordArr = sales.map(x => x.order_count || 0);
 
-    const totalRevenue = sales.reduce((a,b)=>a+b,0);
-    const totalOrders = orders.reduce((a,b)=>a+b,0);
-    const avgOrder = totalOrders ? (totalRevenue/totalOrders).toFixed(2) : 0;
+      const totalRevenue = revArr.reduce((a,b)=>a+b, 0);
+      const totalOrders  = ordArr.reduce((a,b)=>a+b, 0);
+      const avgOrder     = totalOrders ? (totalRevenue / totalOrders).toFixed(0) : 0;
 
-    document.getElementById("totalRevenue").innerText = "₹" + totalRevenue;
-    document.getElementById("totalOrders").innerText = totalOrders;
-    document.getElementById("avgOrder").innerText = "₹" + avgOrder;
+      setKPI('totalRevenue', '₹' + fmt(totalRevenue));
+      setKPI('totalOrders',  fmt(totalOrders));
+      setKPI('avgOrder',     '₹' + fmt(avgOrder));
 
-    if (chart) chart.destroy();
-
-    chart = new Chart(document.getElementById("salesChart"), {
-      type: "bar",
-      data: {
-        labels,
-        datasets: [{
-          label: "Revenue",
-          data: sales,
-          borderWidth: 2
-        }]
-      },
-      options: {
-        responsive: true,
-        maintainAspectRatio: false, // ⭐ FIX
-
-        plugins: {
-          legend: { display: false }
-        },
-        scales: {
-          x: { grid: { display: false } },
-          y: { grid: { color: "#eee" } }
-        }
+      // Top table from orders (if available)
+      if (data.top_table) {
+        setKPI('topTable', 'T-' + data.top_table);
+      } else {
+        setKPI('topTable', '1');
       }
-    });
 
-    // TOP ITEMS
-    const list = document.getElementById("topItems");
-    list.innerHTML = "";
+      /* ─── Chart ─── */
+      if (chart) chart.destroy();
+      chart = new Chart(document.getElementById('salesChart'), {
+        type: 'bar',
+        data: {
+          labels,
+          datasets: [
+            {
+              label: 'Revenue (₹)',
+              data: revArr,
+              backgroundColor: 'rgba(201,153,58,0.18)',
+              borderColor: '#C9993A',
+              borderWidth: 2,
+              borderRadius: 8,
+              borderSkipped: false,
+              yAxisID: 'y',
+            },
+            {
+              label: 'Orders',
+              data: ordArr,
+              type: 'line',
+              borderColor: '#8aabff',
+              backgroundColor: 'rgba(138,171,255,0.1)',
+              borderWidth: 2.5,
+              pointRadius: 4,
+              pointBackgroundColor: '#8aabff',
+              tension: 0.4,
+              yAxisID: 'y1',
+              fill: true,
+            }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          interaction: { mode: 'index', intersect: false },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              backgroundColor: '#1C140A',
+              titleColor: '#E8C46A',
+              bodyColor: '#d4c9b4',
+              padding: 12,
+              cornerRadius: 10,
+              borderColor: 'rgba(201,153,58,0.3)',
+              borderWidth: 1,
+            }
+          },
+          scales: {
+            x: {
+              grid: { display: false },
+              ticks: { font:{ family:'DM Sans', size:11 }, color:'#9a8a6a' }
+            },
+            y: {
+              position: 'left',
+              grid: { color: '#f0e8d8' },
+              ticks: {
+                font: { family:'DM Sans', size:11 }, color:'#9a8a6a',
+                callback: v => '₹' + fmt(v)
+              }
+            },
+            y1: {
+              position: 'right',
+              grid: { drawOnChartArea: false },
+              ticks: { font:{ family:'DM Sans', size:11 }, color:'#8aabff' }
+            }
+          }
+        }
+      });
 
-    data.top_items.forEach(item => {
-      list.innerHTML += `
-        <li class="flex justify-between items-center border-b pb-2 hover:bg-gray-50 px-2 rounded">
-          <span>${item[0]}</span>
-          <span class="font-semibold gold-text">${item[1]}</span>
-        </li>`;
-    });
+      /* ─── Top Items ─── */
+      const list = document.getElementById('topItems');
+      const items = data.top_items || [];
+      if (!items.length) {
+        list.innerHTML = `<li style="color:var(--muted);font-size:.83rem;">No data available</li>`;
+        return;
+      }
+      const maxCount = items[0][1] || 1;
+      list.innerHTML = items.map((item, i) => `
+        <li class="top-item" style="animation-delay:${i*0.06}s">
+          <span class="top-item-rank ${i===0?'gold-rank':''}">${i+1}</span>
+          <span class="top-item-name">${item[0]}</span>
+          <div class="top-item-bar-wrap">
+            <div class="top-item-bar" style="width:${Math.round((item[1]/maxCount)*100)}%;animation-delay:${i*0.07+0.2}s"></div>
+          </div>
+          <span class="top-item-count">${item[1]}</span>
+        </li>`).join('');
 
-  } catch (err) {
-    console.error(err);
+    } catch (err) {
+      console.error(err);
+      ['totalRevenue','totalOrders','avgOrder','topTable'].forEach(id => {
+        document.getElementById(id).textContent = 'Err';
+      });
+    }
   }
-}
 
-// AI
-async function loadAI() {
-  const box = document.getElementById("aiBox");
+  /* ─── AI Suggestions ─── */
+  async function loadAI() {
+    const box = document.getElementById('aiBox');
+    try {
+      const res  = await fetch('/ai-suggestions');
+      const data = await res.json();
+      const raw  = (data.suggestions || 'No insights available.')
+        .replace(/[*#]/g, '')
+        .replace(/^-\s*/gm, '• ')
+        .trim();
 
-  try {
-    const res = await fetch("/ai-suggestions");
-    const data = await res.json();
-
-    const clean = cleanAI(data.suggestions || "No insights");
-
-    box.innerHTML = clean.replace(/\n/g, "<br>");
-
-  } catch {
-    box.innerText = "Failed to load insights";
+      const paragraphs = raw.split(/\n+/).filter(Boolean);
+      box.innerHTML = paragraphs.map(p => `<p>${p}</p>`).join('');
+    } catch {
+      box.innerHTML = `<p style="color:var(--muted)">Could not load AI insights. Make sure the AI endpoint is running.</p>`;
+    }
   }
-}
 
-// INIT
-loadAnalytics();
-loadAI();
-
+  /* ─── Init ─── */
+  loadAnalytics();
+  loadAI();
 </script>
-
 </body>
 </html>
